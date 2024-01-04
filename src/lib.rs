@@ -57,6 +57,7 @@ pub struct Wm8994<I2c, I2cError, Delay> {
     _i2c_err: PhantomData<I2cError>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Config {
     pub address: SevenBitAddress,
 }
@@ -67,6 +68,7 @@ impl<I2c, I2cError, Delay> Wm8994<I2c, I2cError, Delay>
         Delay: delay::DelayMs<u32>,
 {
 
+    /// To actually initialize the codec call init_headphone()
     pub fn new(config: Config, i2c: I2c, delay: Delay) -> Self {
         Self {
             config, i2c, delay,
@@ -74,6 +76,17 @@ impl<I2c, I2cError, Delay> Wm8994<I2c, I2cError, Delay>
         }
     }
 
+    /// This function will initialize the codec:
+    /// - Enable AIF1 and set it to 48 KHz, 16-bit I2S slave mode
+    /// - Enable AIF1 clocking off MCLK1 pin
+    /// - Configure the signal path to HPOUT1
+    /// - Kick-off Control Write Sequencer with "Headphone Cold Start-Up" sequence
+    /// - Unmute the output and set volume to max
+    ///
+    /// Will panic when:
+    ///     - CODEC IC returns incompatible family ID
+    ///     - Control Write Sequencer does not start, which can be caused by lack of clock source
+    ///     - Control Write Sequencer does not finish the sequence in normal time
     pub fn init_headphone(&mut self) -> Result<(), Error<I2cError>> {
 
         assert_eq!(self.get_family()?, FAMILY_ID, "Incorrect family ID");
