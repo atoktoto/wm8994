@@ -1,0 +1,1 @@
+A minimal i2s driver for WM8994 audio codec using Rust and `embedded-hal`.
